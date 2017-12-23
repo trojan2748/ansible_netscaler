@@ -18,7 +18,7 @@ ansible-playbook -i site.yml sample.playbook.yml -u root --ask-pass --tags="modu
 ```
 
 ## Expected vars
-ns-servers
+### ns-servers
 ```
 servers:
     server:
@@ -32,7 +32,7 @@ servers:
           ipaddress: 10.1.12.145
 ```
 
-ns-actions
+### ns-actions
 ```
     rewriteaction:
           - name: ACTION-SAMPLE-1
@@ -45,4 +45,75 @@ ns-actions
             target: "\"https://\"+HTTP.REQ.HOSTNAME.HTTP_URL_SAFE+HTTP.REQ.URL.PATH_AND_QUERY.HTTP_URL_SAFE"
             bypasssafetycheck: "YES"
             type: redirect
+```
+
+### ns-lbmons
+```
+lbmonitors:
+    lbmonitor:
+        - monitorname: http-jbo
+          httprequest: HEAD /security/
+          interval: 12
+          lrtm: DISABLED
+          resptimeout: 6
+          type: HTTP
+          respcode: ['200', '301']
+```
+
+### ns-csvserver
+```
+csvservers:
+    csvserver:
+        - name: CS-SAMPLE-3
+          clttimeout: 180
+          ipv46: 10.1.12.31
+          listenpolicy: None
+          port: 80
+          servicetype: HTTP
+        - name: CS-SAMPLE-1
+          clttimeout: 180
+          ipv46: 128.177.69.61
+          listenpolicy: None
+          port: 80
+          redirecturl: "http://maint.abc.com"
+          servicetype: HTTP
+        - name: CS-SAMPLE-2
+          clttimeout: 180
+          ipv46: 128.177.69.61
+          listenpolicy: None
+          port: 443
+          redirecturl: "http://maint.abc.com"
+          servicetype: SSL
+
+bindings:
+    csvserver_binding:
+        csvserver_cspolicy_binding:
+            - name: CS-SAMPLE-1
+              priority: 100
+              policyname: POLICY-SAMPLE-1
+              bindpoint: REQUEST
+              gotopriorityexpression: END
+            - name: CS-SAMPLE-1
+              priority: 200
+              policyname: POLICY-SAMPLE-2
+              bindpoint: REQUEST
+              gotopriorityexpression: END
+            - name: CS-SAMPLE-2
+              priority: 100
+              policyname: POLICY-SAMPLE-3
+              bindpoint: REQUEST
+              gotopriorityexpression: END
+            - name: CS-SAMPLE-2
+              priority: 100
+              policyname: POLICY-SAMPLE-1
+              bindpoint: REQUEST
+              gotopriorityexpression: END
+        csvserver_lbvserver_binding:
+            - name: CS-SAMPLE-3
+              lbvserver: SAMPLE-LB-1
+            - name: CS-SAMPLE-1
+              lbvserver: SAMPLE-LB-1
+            - name: CS-SAMPLE-2
+              lbvserver: SAMPLE-LB-1
+
 ```
