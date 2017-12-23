@@ -3,6 +3,15 @@ Author: Author: adamlandas@g m.@.l.c0m
 
 Sample playbooks to be used by dumps from ns_to_yaml.py
 
+## Notes
+* If running a complete configurations (serviceGroup, lb vserver, cs vserver, etc), you should run in this order:
+    - ns-servers
+    - ns-lbmons
+    - ns-svcgroup
+    - ns-lbvserver
+    - ns-actions
+    - ns-cs-policy
+    - ns-csvserver
 
 ## Example usages:
 ### URI method
