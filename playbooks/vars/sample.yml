@@ -107,14 +107,14 @@ csvservers:
           ipv46: 128.177.69.61
           listenpolicy: None
           port: 80
-          redirecturl: "http://maint.auction.com"
+          redirecturl: "http://maint.abc.com"
           servicetype: HTTP
         - name: CS-SAMPLE-2
           clttimeout: 180
           ipv46: 128.177.69.61
           listenpolicy: None
           port: 443
-          redirecturl: "http://maint.auction.com"
+          redirecturl: "http://maint.abc.com"
           servicetype: SSL
 
 
