@@ -1,4 +1,15 @@
 #!/usr/bin/env python
+"""
+Author: adamlandas@g m.@.l.c0m
+Version: .1
+
+Descripton: 
+  * Script will take ns.conf (in script directory) and dump config
+
+Changelog:
+  % 12/20/2017 - Initial commit
+
+"""
 import yaml
 import argparse
 
