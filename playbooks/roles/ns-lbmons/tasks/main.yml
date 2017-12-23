@@ -1,0 +1,43 @@
+---
+
+
+- name: Create lb-mon (module)
+  tags:
+    - create_lb_mon_module
+    - module
+  delegate_to: localhost
+  netscaler_lb_monitor:
+    nsip: "{{ ns_ip }}"
+    validate_certs: no
+    nitro_user: "{{ ns_user }}"
+    nitro_pass: "{{ ns_pass }}"
+    state: present
+    monitorname: "{{ item.monitorname }}"
+    type: "{{ item.type }}"
+    lrtm: "{{ item.lrtm | lower }}"
+    respcode: "{{ item.respcode }}"
+    httprequest: "{{ item.httprequest }}"
+    resptimeout: "{{ item.resptimeout }}"
+    interval: "{{ item.interval }}"
+  register: create_lb_mon
+  with_items: "{{ lbmonitors.lbmonitor }}"
+
+
+- name: Create lb-mon (uri)
+  tags:
+    - create_lb_mon_uri
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  with_dict: "{{ lbmonitors }}"
+  register: create_lb_mon_result
+  ignore_errors: True

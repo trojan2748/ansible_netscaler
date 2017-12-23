@@ -1,0 +1,76 @@
+---
+
+- name: Create serviceGroup (module)
+  tags:
+    - create_serviceGroup_module
+    - module
+  delegate_to: localhost
+  netscaler_servicegroup:
+    nsip: "{{ ns_ip }}"
+    validate_certs: no
+    nitro_user: "{{ ns_user }}"
+    nitro_pass: "{{ ns_pass }}"
+    state: present
+
+
+    appflowlog: "{{ item.appflowlog }}"
+    cip: "{{ item.cip }}"
+    cka: "{{ item.cka }}"
+    cipheader: "{{ item.cipheader }}"
+    clttimeout: "{{ item.clttimeout }}"
+    cmp: "{{ item.cmp }}"
+    maxclient: "{{ item.maxclient }}"
+    maxreq: "{{ item.maxreq }}"
+    servicegroupname: "{{ item.servicegroupname }}"
+    servicemembers: "{{ bindings.servicegroup_binding.servicegroup_servicegroupmember_binding }}"
+    servicetype: "{{ item.servicetype }}"
+    svrtimeout: "{{ item.svrtimeout }}"
+    sp: "{{ item.sp }}"
+    tcpb: "{{ item.tcpb }}"
+    useproxyport: "{{ item.useproxyport }}"
+    usip: "{{ item.usip }}"
+  with_items: "{{ servicegroups.servicegroup }}"
+  register: create_serviceGroup
+  ignore_errors: True
+
+
+- name: Create serviceGroup (uri)
+  tags:
+    - create_serviceGroup_uri
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  with_dict: "{{ servicegroups }}"
+  register: create_serviceGroup_uri
+  ignore_errors: True
+
+- name: Bind lbmon to serviceGroup (uri)
+  tags:
+    - create_serviceGroup_uri
+    - create_serviceGroup_module
+    - bind_serviceGroup_uri
+    - uri
+    - module
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  with_dict: "{{ bindings.servicegroup_binding }}"
+  register: create_serviceGroup_uri
+  ignore_errors: True

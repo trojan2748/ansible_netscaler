@@ -1,0 +1,15 @@
+---
+
+- hosts: all
+  gather_facts: False
+  vars_files:
+    - vars/sample.yml
+    - vars/all.yml
+  roles:
+    - ns-servers
+    - ns-lbmons
+    - ns-svcgroup
+    - ns-lbvserver
+    - ns-actions
+    - ns-cs-policy
+    - ns-csvserver

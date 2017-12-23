@@ -1,0 +1,68 @@
+---
+
+#- name: Create LB vserver
+#  tags:
+#    - create_lb_vserver 
+#  delegate_to: localhost
+#  netscaler_lb_vserver:
+#    nsip: "{{ ns_ip }}"
+#    validate_certs: no
+#    nitro_user: "{{ ns_user }}"
+#    nitro_pass: "{{ ns_pass }}"
+#    state: present
+
+#    name: "{{ item.key }}"
+#    servicetype: "{{ item.value.servicetype }}"
+#    lbmethod: "{{ item.value.lbmethod | upper }}"
+#    listenpolicy: "{{ item.value.listenpolicy }}"
+#    ipv46: "{{ item.value.ipv46 }}"
+#    persistencetype: "{{ item.value.persistencetype }}"
+#    port: '{{ item.value.port }}'
+#    clttimeout: "{{ item.value.clttimeout }}"
+
+#    servicegroupbindings:
+#      - servicegroupname: "{{ bindings.lbmons.servicegroupname }}"
+#  register: create_lb_vserver
+#  with_dict: "{{ lbvservers }}"
+
+
+- name: Create lbvserver (uri)
+  tags:
+    - create_lbvserver_uri
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/lbvserver"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"lbvserver": {{ item.value | to_json }} }'
+  with_dict: "{{ lbvservers }}"
+  register: create_lbvserver_uri
+  ignore_errors: True
+
+
+- name: Bind lbmon to serviceGroup (uri)
+  tags:
+    - create_lbvserver_uri
+    - bind_lbvserver_uri
+    - uri
+    - module
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  with_dict: "{{ bindings.lbvserver_binding }}"
+  register: create_serviceGroup_uri
+  ignore_errors: True

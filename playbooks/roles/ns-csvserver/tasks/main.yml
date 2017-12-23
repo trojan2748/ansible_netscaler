@@ -1,0 +1,60 @@
+---
+
+- name: Create CS vserver (module)
+  tags:
+    - create_cs_vserver_module
+    - module
+  delegate_to: localhost
+  netscaler_cs_vserver:
+    nsip: "{{ ns_ip }}"
+    validate_certs: no
+    nitro_user: "{{ ns_user }}"
+    nitro_pass: "{{ ns_pass }}"
+    state: present
+
+    name: "{{ item.key }}"
+    ipv46: "{{ item.value.ipv46}}"
+    servicetype: "{{ item.value.servicetype }}"
+    redirecturl: "{{ item.value.redirecturl }}"
+    port: "{{ item.value.port }}"
+    listenpolicy: None
+  register: create_cs_vserver
+  with_dict: "{{ csvservers }}"
+
+- name: Create CS vserver (uri)
+  delegate_to: localhost
+  tags:
+    - create_cs_vserver_uri
+    - uri
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}/"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value }} }'
+  register: create_cs_vserver 
+  with_dict: "{{ csvservers }}"
+
+- name: Bind CS policies (uri)
+  delegate_to: localhost
+  tags:
+    - bind_policies_uri
+    - bind_policies_module
+    - uri
+    - module
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}/"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value }} }'
+  register: bind_lb_policies
+  with_dict: "{{ bindings.csvserver_binding }}"

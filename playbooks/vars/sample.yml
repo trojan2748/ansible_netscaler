@@ -1,0 +1,171 @@
+---
+
+
+ns_ip: 10.1.3.205
+ns_user: nsroot
+ns_pass: nsroot
+
+servicegroups:
+    servicegroup:
+        - servicegroupname: SVCGRP-SAMPLE-1
+          appflowlog: disabled
+          cip: disabled
+          cka: "YES"
+          clttimeout: 180
+          cmp: "NO"
+          maxclient: 0
+          maxreq: 0
+          servicetype: HTTP
+          sp: "ON"
+          svrtimeout: 360
+          tcpb: "YES"
+          useproxyport: "YES"
+          usip: "NO"
+
+
+
+bindings:
+    servicegroup_binding:
+        servicegroup_lbmonitor_binding:
+            - servicegroupname: SVCGRP-SAMPLE-1
+              monitor_name: http-jbo
+        servicegroup_servicegroupmember_binding:
+            - servicegroupname: SVCGRP-SAMPLE-1
+              servername: SERVER-SAMPLE-1
+              port: 80
+              state: enabled
+            - servicegroupname: SVCGRP-SAMPLE-1
+              servername: SERVER-SAMPLE-2
+              port: 80
+              state: enabled
+            - servicegroupname: SVCGRP-SAMPLE-1
+              servername: SERVER-SAMPLE-3
+              port: 80
+              state: enabled
+            - servicegroupname: SVCGRP-SAMPLE-1
+              servername: SERVER-SAMPLE-4
+              port: 80
+              state: enabled
+    lbvserver_binding:
+        lbvserver_servicegroup_binding:
+            - name: SAMPLE-LB-1
+              servicegroupname: SVCGRP-SAMPLE-1
+    csvserver_binding:
+        csvserver_cspolicy_binding:
+            - name: CS-SAMPLE-1
+              priority: 100
+              policyname: POLICY-SAMPLE-1
+              bindpoint: REQUEST
+              gotopriorityexpression: END
+            - name: CS-SAMPLE-1
+              priority: 200
+              policyname: POLICY-SAMPLE-2
+              bindpoint: REQUEST
+              gotopriorityexpression: END
+            - name: CS-SAMPLE-2
+              priority: 100
+              policyname: POLICY-SAMPLE-3
+              bindpoint: REQUEST
+              gotopriorityexpression: END
+            - name: CS-SAMPLE-2
+              priority: 100
+              policyname: POLICY-SAMPLE-1
+              bindpoint: REQUEST
+              gotopriorityexpression: END
+        csvserver_lbvserver_binding:
+            - name: CS-SAMPLE-3
+              lbvserver: SAMPLE-LB-1
+            - name: CS-SAMPLE-1
+              lbvserver: SAMPLE-LB-1
+            - name: CS-SAMPLE-2
+              lbvserver: SAMPLE-LB-1
+
+
+
+lbvservers:
+    lbvserver:
+        - name: SAMPLE-LB-1
+          clttimeout: 180
+          ipv46: 0.0.0.0
+          listenpolicy: None
+          persistencetype: NONE
+          port: 0
+          servicetype: HTTP
+
+
+
+csvservers:
+    csvserver:
+        - name: CS-SAMPLE-3
+          clttimeout: 180
+          ipv46: 10.1.12.31
+          listenpolicy: None
+          port: 80
+          servicetype: HTTP
+        - name: CS-SAMPLE-1
+          clttimeout: 180
+          ipv46: 128.177.69.61
+          listenpolicy: None
+          port: 80
+          redirecturl: "http://maint.auction.com"
+          servicetype: HTTP
+        - name: CS-SAMPLE-2
+          clttimeout: 180
+          ipv46: 128.177.69.61
+          listenpolicy: None
+          port: 443
+          redirecturl: "http://maint.auction.com"
+          servicetype: SSL
+
+
+
+policies:
+    rewritepolicy:
+        - name: POLICY-SAMPLE-3
+          action: ACTION-SAMPLE-1
+          rule: "HTTP.REQ.URL.PATH.SET_TEXT_MODE(IGNORECASE).STARTSWITH(\"/v1/search/assets\")&&!HTTP.REQ.URL.PATH_AND_QUERY.SET_TEXT_MODE(IGNORECASE).CONTAINS(\"filterVersion=\")"
+    responderpolicy:
+        - name: POLICY-SAMPLE-1
+          action: DROP
+          rule: "HTTP.REQ.URL.EQ(\"/\")||HTTP.REQ.URL.EQ(\"/index.html\")"
+        - name: POLICY-SAMPLE-2
+          action: ACTION-SAMPLE-2
+          rule: HTTP.REQ.IS_VALID
+
+
+
+servers:
+    server:
+        - name: SERVER-SAMPLE-1
+          ipaddress: 10.1.12.101
+        - name: SERVER-SAMPLE-2
+          ipaddress: 10.1.12.119
+        - name: SERVER-SAMPLE-3
+          ipaddress: 10.1.12.144
+        - name: SERVER-SAMPLE-4
+          ipaddress: 10.1.12.145
+
+
+
+lbmonitors:
+    lbmonitor:
+        - monitorname: http-jbo
+          httprequest: HEAD /security/
+          interval: 12
+          lrtm: DISABLED
+          resptimeout: 6
+          type: HTTP
+          respcode: ['200', '301']
+
+actions:
+    rewriteaction:
+          - name: ACTION-SAMPLE-1
+            bypasssafetycheck: "NO"
+            stringbuilderexpr: "\"/v1/query/assets\""
+            type: replace
+            target: HTTP.REQ.URL.PATH
+    responderaction:
+          - name: ACTION-SAMPLE-2
+            target: "\"https://\"+HTTP.REQ.HOSTNAME.HTTP_URL_SAFE+HTTP.REQ.URL.PATH_AND_QUERY.HTTP_URL_SAFE"
+            bypasssafetycheck: "YES"
+            type: redirect

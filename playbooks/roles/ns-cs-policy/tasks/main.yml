@@ -1,0 +1,19 @@
+---
+
+- name: Create CS policy (uri)
+  tags:
+    - create_cs_policy
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value }} }'
+  register: create_cs_policy
+  with_dict: "{{ policies }}"

@@ -1,0 +1,45 @@
+---
+
+- name: Create policypatset (uri)
+  delegate_to: localhost
+  tags:
+    - create_policy_patset_uri
+    - create_policy_patset_module
+    - uri
+    - module
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/policypatset/{{ item }}"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"policypatset":{"name":"{{ item }}"} }'
+  register: create_policy_patset
+  with_items: "{{ patset }}"
+
+
+- name: Bind URLs to policypatset (uri)
+  delegate_to: localhost
+  tags:
+    - bind_patsets_uri
+    - bind_patsets_module
+    - uri
+    - module
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/policypatset_pattern_binding/{{ item.key }}"
+    method: PUT
+    status_code: 200,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"policypatset_pattern_binding": {{ item.value | to_json }} }'
+  register: bind_patsets
+  with_dict: "{{ patset }}"
+  when:  item.key == item.value[0].name 
+  ignore_errors: True
+
