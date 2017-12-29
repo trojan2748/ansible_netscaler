@@ -12,7 +12,6 @@
     nitro_user: "{{ ns_user }}"
     nitro_pass: "{{ ns_pass }}"
     state: present
-
     name: "{{ item.name }}"
     ipaddress: "{{ item.ipaddress }}"
   with_items: "{{ servers.server }}"
@@ -35,4 +34,5 @@
     body: '{"server": {{ item.value | to_json }} }'
   register: add_servers
   with_dict: "{{ servers }}"
-  fail_when: "'already exists' not in add_servers.content"
+  failed_when: "'Resource already exists' not in add_servers['json']['response'][0]['message'] and 201 != add_servers['status']"
+
