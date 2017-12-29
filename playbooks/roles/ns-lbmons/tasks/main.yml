@@ -40,4 +40,5 @@
     body: '{"{{ item.key }}": {{ item.value | to_json }} }'
   with_dict: "{{ lbmonitors }}"
   register: create_lb_mon_result
-  ignore_errors: True
+  failed_when: "'Conflict' not in create_lb_mon_result['msg'] and 201 != create_lb_mon_result['status']"
+
