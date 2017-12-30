@@ -1,19 +1,80 @@
 ---
 
-- name: Create CS policy (uri)
+- name: Create Policyexpresions (uri)
   tags:
-    - create_cs_policy
+    - create_policyexpressions
     - uri
   delegate_to: localhost
   uri:
-    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    url: "http://{{ ns_ip }}/nitro/v1/config/policyexpression"
     method: POST
-    status_code: 200,201,409
+    status_code: 200,201,409,599
     return_content: yes
     headers:
       X-NITRO-USER: "{{ ns_user }}"
       X-NITRO-PASS: "{{ ns_pass }}"
     body_format: json
-    body: '{"{{ item.key }}": {{ item.value }} }'
-  register: create_cs_policy
-  with_dict: "{{ policies }}"
+    body: '{"policyexpression": {{ item | to_json }} }'
+  register: create_policyexpressions_
+  with_items: "{{ policyexpressions.policyexpression }}"
+  when: policyexpressions is defined
+
+
+- name: Create responder policies (uri)
+  tags:
+    - create_policies
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/responderpolicy"
+    method: POST
+    status_code: 200,201,409,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"responderpolicy": {{ item }} }'
+  register: create_responderpolicy
+  with_items: "{{ policies.responderpolicy }}"
+  when: policies.responderpolicy is defined
+
+- name: Create rewrite policies (uri)
+  tags:
+    - create_policies
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/rewriterpolicy"
+    method: POST
+    status_code: 200,201,409,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"rewritepolicy": {{ item | to_json }} }'
+  register: create_rewritepolicy
+  with_items: "{{ policies.rewritepolicy }}"
+  when: policies.rewritepolicy is defined
+
+
+- name: Create cs policies (uri)
+  tags:
+    - create_policies
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/cspolicy"
+    method: POST
+    status_code: 200,201,409,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"cspolicy": {{ item | to_json }} }'
+  register: create_cspolicy
+  with_items: "{{ policies.cspolicy }}"
+  when: policies.cspolicy is defined
+
