@@ -25,14 +25,14 @@
   uri:
     url: "http://{{ ns_ip }}/nitro/v1/config/server?action=add"
     method: POST
-    status_code: 201, 599
+    status_code: 201, 599, 409
     return_content: yes
     headers:
       X-NITRO-USER: "{{ ns_user }}"
       X-NITRO-PASS: "{{ ns_pass }}"
     body_format: json
-    body: '{"server": {{ item.value | to_json }} }'
+    body: '{"server": {{ item }} }'
   register: add_servers
-  with_dict: "{{ servers }}"
-  failed_when: "'Resource already exists' not in add_servers['json']['response'][0]['message'] and 201 != add_servers['status']"
+  with_items: "{{ servers.server }}"
+#  failed_when: "'Resource already exists' not in add_servers['json']['response'][0]['message'] and 201 != add_servers['status']"
 

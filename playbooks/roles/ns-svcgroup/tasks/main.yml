@@ -40,7 +40,7 @@
     - uri
   delegate_to: localhost
   uri:
-    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    url: "http://{{ ns_ip }}/nitro/v1/config/servicegroup"
     method: POST
     status_code: 200,201,409
     return_content: yes
@@ -48,12 +48,12 @@
       X-NITRO-USER: "{{ ns_user }}"
       X-NITRO-PASS: "{{ ns_pass }}"
     body_format: json
-    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
-  with_dict: "{{ servicegroups }}"
+    body: '{"servicegroup": {{ item | to_json }} }'
+  with_items: "{{ servicegroups.servicegroup }}"
   register: create_serviceGroup_uri
   ignore_errors: True
 
-- name: Bind lbmon to serviceGroup (uri)
+- name: Bind servers to serviceGroup (uri)
   tags:
     - create_serviceGroup_uri
     - create_serviceGroup_module
@@ -62,15 +62,40 @@
     - module
   delegate_to: localhost
   uri:
-    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    url: "http://{{ ns_ip }}/nitro/v1/config/servicegroup_servicegroupmember_binding"
     method: POST
-    status_code: 201, 599
+    status_code: 201, 599, 409
     return_content: yes
     headers:
       X-NITRO-USER: "{{ ns_user }}"
       X-NITRO-PASS: "{{ ns_pass }}"
     body_format: json
-    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
-  with_dict: "{{ bindings.servicegroup_binding }}"
-  register: create_serviceGroup_uri
+    body: '{"servicegroup_servicegroupmember_binding": {{ item | to_json }} }'
+  with_items: "{{ servicegroups.servicegroup_servicegroupmember_binding }}"
+  register: bind_serviceGroup_uri
   ignore_errors: True
+  when: servicegroups.servicegroup_servicegroupmember_binding is defined
+
+
+- name: Bind lb monitor to serviceGroup (uri)
+  tags:
+    - create_serviceGroup_uri
+    - create_serviceGroup_module
+    - bind_serviceGroup_uri
+    - uri
+    - module
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/servicegroup_lbmonitor_binding"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"servicegroup_lbmonitor_binding": {{ item | to_json }} }'
+  with_items: "{{ servicegroups.servicegroup_lbmonitor_binding }}"
+  register: bind_serviceGroup_uri
+  ignore_errors: True
+  when: servicegroups.servicegroup_lbmonitor_binding is defined
