@@ -29,7 +29,7 @@
     - uri
   delegate_to: localhost
   uri:
-    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    url: "http://{{ ns_ip }}/nitro/v1/config/lbmonitor"
     method: POST
     status_code: 201,409
     return_content: yes
@@ -37,8 +37,8 @@
       X-NITRO-USER: "{{ ns_user }}"
       X-NITRO-PASS: "{{ ns_pass }}"
     body_format: json
-    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
-  with_dict: "{{ lbmonitors }}"
+    body: '{"lbmonitor": {{ item | to_json }} }'
+  with_items: "{{ lbmonitors.lbmonitor }}"
   register: create_lb_mon_result
-  failed_when: "'Conflict' not in create_lb_mon_result['msg'] and 201 != create_lb_mon_result['status']"
+  when: lbmonitors is defined
 

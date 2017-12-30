@@ -26,6 +26,29 @@
 #  with_dict: "{{ lbvservers }}"
 
 
+
+
+- name: Create backup lbvserver (uri)
+  tags:
+    - create_lbvserver_uri
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/lbvserver"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"lbvserver": {{ item | to_json }} }'
+  with_items: "{{ lbvservers.backuplbvserver }}"
+  register: create_lbvserver_uri
+  when: lbvservers.backuplbvserver is defined
+
+
+
 - name: Create lbvserver (uri)
   tags:
     - create_lbvserver_uri
@@ -40,13 +63,13 @@
       X-NITRO-USER: "{{ ns_user }}"
       X-NITRO-PASS: "{{ ns_pass }}"
     body_format: json
-    body: '{"lbvserver": {{ item.value | to_json }} }'
-  with_dict: "{{ lbvservers }}"
+    body: '{"lbvserver": {{ item | to_json }} }'
+  with_items: "{{ lbvservers.lbvserver }}"
   register: create_lbvserver_uri
   ignore_errors: True
 
 
-- name: Bind lbmon to serviceGroup (uri)
+- name: Bind lb vserver to serviceGroup (uri)
   tags:
     - create_lbvserver_uri
     - bind_lbvserver_uri
@@ -54,15 +77,15 @@
     - module
   delegate_to: localhost
   uri:
-    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    url: "http://{{ ns_ip }}/nitro/v1/config/lbvserver_servicegroup_binding"
     method: POST
-    status_code: 201, 599
+    status_code: 201, 599, 409
     return_content: yes
     headers:
       X-NITRO-USER: "{{ ns_user }}"
       X-NITRO-PASS: "{{ ns_pass }}"
     body_format: json
-    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
-  with_dict: "{{ bindings.lbvserver_binding }}"
-  register: create_serviceGroup_uri
+    body: '{"lbvserver_servicegroup_binding": {{ item | to_json }} }'
+  with_items: "{{ lbvservers.lbvserver_binding.lbvserver_servicegroup_binding }}"
+  register: bind_lbmon_uri
   ignore_errors: True
