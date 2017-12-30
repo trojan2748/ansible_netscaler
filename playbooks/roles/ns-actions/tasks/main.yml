@@ -1,19 +1,42 @@
 ---
 
-- name: Create CS action (uri)
+- name: Create responder action (uri)
   tags:
-    - create_cs_action_uri
+    - create_responder_action_uri
     - uri
   delegate_to: localhost
   uri:
-    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}/"
+    url: "http://{{ ns_ip }}/nitro/v1/config/responderaction"
     method: POST
-    status_code: 200,201,409
+    status_code: 200,201,409,599
     return_content: yes
     headers:
       X-NITRO-USER: "{{ ns_user }}"
       X-NITRO-PASS: "{{ ns_pass }}"
     body_format: json
-    body: '{"{{ item.key }}": {{ item.value }} }'
-  register: create_cs_action_result
-  with_dict: "{{ actions }}"
+    body: "{ 'responderaction' :  {{ item }} }"
+  register: create_responder_action_result
+  with_items: "{{ actions.responderaction }}"
+  when: actions.responderaction is defined
+
+
+- name: Create rewrite action (uri)
+  tags:
+    - create_rewrite_action_uri
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/rewriteaction"
+    method: POST
+    status_code: 200,201,409,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: "{ 'rewriteaction' :  {{ item }} }"
+  register: create_rewrite_action_result
+  with_items: "{{ actions.rewriteaction }}"
+  when: actions.rewriteaction is defined
+
+
