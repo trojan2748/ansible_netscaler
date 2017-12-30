@@ -46,20 +46,27 @@ def GetArgs():
 
     return args
 
+
 for line in lines:
   if "add policy patset" in line:
     name = line.split()[3]
     patsets[name] = []
+    continue
   elif "bind policy patset" in line:
     name = line.split()[3]
     patsets[name].append(line.split()[4])
+    continue
 
 
   elif "add policy expression" in line:
     name = line.split()[3]
     policyexpressions[name] = {}
     policyexpressions[name]["name"] = name
-    policyexpressions[name]["value"] = line.split(name)[1].strip()
+    if "-comment" in line:
+      policyexpressions[name]["value"] = line.split(name)[1].split(" -comment")[0].strip()
+    else: 
+      policyexpressions[name]["value"] = line.split(name)[1].strip()
+    continue
 
 
   elif "add responder action" in line or "add rewrite action" in line:
@@ -69,24 +76,29 @@ for line in lines:
     actions[name]["name"] = name
     actions[name]["t"] = t
     actions[name]["type"] = line.split()[4].strip()
-    actions[name]["bypasssafetycheck"] = '"NO"'
+    actions[name]["bypasssafetycheck"] = 'NO'
     if "-bypassSafetyCheck" in line:
-      actions[name]["bypasssafetycheck"] = '"YES"'
+      actions[name]["bypasssafetycheck"] = 'YES'
       s = line.split(actions[name]["type"])[1].split("-bypassSafetyCheck")[0].strip().split()
       if t == "rewriteaction":
         actions[name]["stringbuilderexpr"] = "".join(s[1:])
         actions[name]["target"] = s[0]
       else:
-        actions[name]["target"] = "".join(s)
+        actions[name]["target"] = "".join(s).replace("q{", "").replace("}","")
     elif "-comment" in line:
-      actions[name]["target"] = line.split(actions[name]["type"])[1].split("-comment")[0]
+      target = line.split(actions[name]["type"])[1].split("-comment")[0]
+      target =  target.replace("q{", "")
+      target =  target.replace("}", "")
+     
+      actions[name]["target"] = line.split(actions[name]["type"])[1].split("-comment")[0].replace("q{", "").replace("}","")
     else: 
       if t == "rewriteaction":
         s = line.split(actions[name]["type"])[1]
         actions[name]["stringbuilderexpr"] = line.split(actions[name]["type"])[1].split()[1]
         actions[name]["target"] = line.split(actions[name]["type"])[1].split()[0]
       else:
-        actions[name]["target"] = line.split(actions[name]["type"])[1].strip()
+        actions[name]["target"] = line.split(actions[name]["type"])[1].strip().replace("q{", "").replace("}","")
+    continue
 
 
   elif "add responder policy" in line:
@@ -101,6 +113,7 @@ for line in lines:
     pol["rule"] = line.split(name)[1].split(pol["action"])[0].strip()
 
     policies[name] = pol
+    continue
 
 
   elif "add rewrite policy" in line:
@@ -111,14 +124,57 @@ for line in lines:
     p["name"] = name
     p["rule"] = line.split()[4]
     p["action"] = line.split()[5]
+    continue
 
 
   elif "add cs policy" in line:
     name = line.split()[3].strip()
     policies[name] = {}
     policies[name]["name"] = name
+    policies[name]["policyname"] = name
     policies[name]["t"] = "cspolicy"
     policies[name]["rule"] = line.split("-rule")[1].strip()
+    continue
+
+  elif "add transform " in line:
+    name = line.split()[3]
+    t = line.split()[2]
+    tty = line.split()[1]
+    if t == "action":
+      a = {}
+      a["name"] = name
+      a["t"] = t
+      a["type"] = tty
+      a["profile"] = line.split()[4]
+      a["proiority"] = line.split()[-1]
+      actions[name] = a
+      continue
+    elif t == "policy":
+      a = {}
+      a["name"] = name
+      a["t"] = t
+      a["type"] = tty
+      a["profile"] = line.split()[-1]
+      a["rule"] = "".join(line.split("policy %s" % name)[1].split(a["profile"])[0])
+      policies[name] = a
+      continue
+
+  elif "set transform action" in line:
+    name = line.split()[3]
+    t = "set"
+    s = {}
+    s["name"] = name
+    s["type"] = "set"
+    items = line.split("action %s" % name)[1].split(" -")
+    for item in items:
+      if item == "":
+        continue
+      key = item.strip().split()[0].strip()
+      value = " ".join(item.split()[1:]).strip()
+      s[key] = value
+    policies[name] = s
+    continue
+
 
 
   elif "add server " in line:
@@ -126,6 +182,7 @@ for line in lines:
     servers[name] = {}
     servers[name]["name"] = name
     servers[name]["ipaddress"] = line.split()[3].strip()
+    continue
 
 
   elif "add lb monitor" in line:
@@ -149,6 +206,7 @@ for line in lines:
       lbmons[name]["destport"] = line.split("-destPort")[1].split("-")[0].strip()
     if "-send" in line:
       lbmons[name]["send"] = line.split("-send")[1].split("-")[0].strip()
+    continue
 
 
   elif "add cs vserver" in line:
@@ -166,6 +224,7 @@ for line in lines:
         key = key.split("-")[1]
       value = " ".join(item.split()[1:]).strip()
       csvservers[name][key] =  value
+    continue
 
 
   elif "bind cs vserver" in line:
@@ -189,7 +248,7 @@ for line in lines:
       lbvservers[lb]["csvs"].append(name)
       continue
      
-    if "-targetLBVserver" in line:
+    elif "-targetLBVserver" in line:
       lb = line.split("-targetLBVserver")[1].split()[0].strip()
       b["targetlbvserver"] = lb
       lbvservers[lb]["csvs"].append(name)
@@ -210,6 +269,7 @@ for line in lines:
 
     bindings["csvserver_binding"]["csvserver_cspolicy_binding"][name].append(b)   
     csvservers[name]["binds"].append(b)
+    continue
 
 
   elif "add lb vserver" in line:
@@ -228,6 +288,7 @@ for line in lines:
         key = key.split("-")[1]
       value = " ".join(item.split()[1:]).strip()
       lbvservers[name][key] = value
+    continue
 
 
   elif "bind lb vserver" in line:
@@ -242,6 +303,7 @@ for line in lines:
       if "lbvserver_servicegroup_binding" not in bindings["lbvserver_binding"].keys():
         bindings["lbvserver_binding"]["lbvserver_servicegroup_binding"] = []
       bindings["lbvserver_binding"]["lbvserver_servicegroup_binding"].append(b)
+      continue
     
 
   elif "add serviceGroup " in line:
@@ -256,33 +318,31 @@ for line in lines:
       value = " ".join(item.split()[1:]).strip()
       if key[0] == "-":
         key = key.split("-")[1]
-      s[key] = value.lower()
+      if key == "cip" and "ENABLED" in value:
+        s["cip"] = "enabled"
+        s["cipheader"] = value.split()[1]
+      else:
+        s[key] = value.lower()
     servicegroups[name] = s
+    if "servicegroup_binding" not in bindings.keys():
+      bindings["servicegroup_binding"] = {}
+      bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"] = {}
+      bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"] = {}
+    bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"][name] = []
+    bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"][name] = []
+    continue
 
 
   elif "bind serviceGroup " in line:
     name = line.split()[2].strip()
-    if "servicegroup_binding" not in bindings.keys():
-      bindings["servicegroup_binding"] = {}
     if "-monitorName" in line:
-      if "servicegroup_lbmonitor_binding" not in bindings["servicegroup_binding"].keys():
-        bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"] = {}
-      
-      if name not in bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"]:
-        bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"][name] = []
-
       l = {}
       l["monitor_name"] = line.split("-monitorName")[1].split()[0].strip()
       l["servicegroupname"] = name
       bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"][name].append(l)
+      continue
 
     else:
-      if "servicegroup_servicegroupmember_binding" not in bindings["servicegroup_binding"].keys():
-        bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"] = {}
-
-      if name not in bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"]:
-        bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"][name] = []
-
       s = {}
       s["servername"] = line.split()[3].strip()
       s["port"] = line.split()[4].strip()
@@ -291,8 +351,8 @@ for line in lines:
         s["state"] = "disabled"
       if "-CustomServerID" in line:
         s["customerserverid"] = line.split("-CustomServerID")[1].split()[0].strip()
-
       bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"][name].append(s)
+      continue
 
 
 def get_all_conf():
@@ -306,6 +366,8 @@ def get_group_conf(group):
   print "ns_pass: nsroot"
   print
   svg = servicegroups[group]
+  group_lbs = [x['name'] for x in bindings["lbvserver_binding"]["lbvserver_servicegroup_binding"] if x['servicegroupname'] == group]
+  group_mons = [x['monitor_name'] for x in bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"][group] if x['servicegroupname'] == group]
 
   print "servicegroups:"
   print "    servicegroup:"
@@ -317,106 +379,157 @@ def get_group_conf(group):
       else:
         print "          %s: %s" % (key, svg[key])
 
-
-  mons = []
-  print "\n\n"
-  print "bindings:"
-  print "    servicegroup_binding:"
-  print "        servicegroup_lbmonitor_binding:"
-  try:
-    for mon in bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"][group]:
-      print "            - servicegroupname: %s" % (mon["servicegroupname"])
-      print "              monitor_name: %s" % (mon["monitor_name"])
-      mons.append(mon["monitor_name"])
-  except:
-    pass
+  if len(group_mons) > 0:
+    print "    servicegroup_lbmonitor_binding:"
+    try:
+      for mon in bindings["servicegroup_binding"]["servicegroup_lbmonitor_binding"][group]:
+        print "        - servicegroupname: %s" % (mon["servicegroupname"])
+        print "          monitor_name: %s" % (mon["monitor_name"])
+    except:
+      pass
 
   ss = []
-  print "        servicegroup_servicegroupmember_binding:"
-  try:
-    for server in bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"][group]:
-      print "            - servicegroupname: %s" % (group)
-      print "              servername: %s" % (server["servername"])
-      print "              port: %s" % (server["port"])
-      print "              state: %s" % (server["state"])
-      ss.append(server["servername"])
-  except:
-    pass
+  if len(bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"][group]) > 0:
+    print "    servicegroup_servicegroupmember_binding:"
+    try:
+      for server in bindings["servicegroup_binding"]["servicegroup_servicegroupmember_binding"][group]:
+        print "        - servicegroupname: %s" % (group)
+        print "          servername: %s" % (server["servername"])
+        print "          port: %s" % (server["port"])
+        print "          state: %s" % (server["state"])
+        ss.append(server["servername"])
+    except:
+      pass
+
+  backup_lbs = []
+  if len(group_lbs) > 0:
+    print "\n\n"
+    print "lbvservers:"
+    print "    lbvserver:"
+    for lb in group_lbs:
+      print "        - name: %s" % lb
+      for key in sorted(lbvservers[lb]):
+        if key != "name" and key != "csvs":
+          if key == "backupvserver":
+            backup_lbs.append(lbvservers[lb][key])
+          print "          %s: %s" % (key, lbvservers[lb][key])
+  if len(backup_lbs) > 0:
+    print "    backuplbvserver:"
+    for lb in backup_lbs:
+      print "        - name: %s" % lb
+      for key in sorted(lbvservers[lb]):
+        if key != "name" and key != "csvs":
+          if key == "backupvserver":
+            backup_lbs.append(lbvservers[lb][key])
+          print "          %s: %s" % (key, lbvservers[lb][key])
 
 
-  lbs = []
+  # l checkes to see if group has any lb bindings
+  l = [x['servicegroupname'] for x in bindings["lbvserver_binding"]["lbvserver_servicegroup_binding"] if x['servicegroupname'] == group]
   csvs = []
-  print "    lbvserver_binding:"
-  print "        lbvserver_servicegroup_binding:"
-  for lb in bindings["lbvserver_binding"]["lbvserver_servicegroup_binding"]:
-    if lb["servicegroupname"] == group:
-      print "            - name: %s" % (lb["name"])
-      print "              servicegroupname: %s" % (lb["servicegroupname"])
-      lbs.append(lb["name"])
-      csvs.extend(lbvservers[lb["name"]]["csvs"])
-      
+  if len(l) > 0:
+    print "    lbvserver_binding:"
+    print "        lbvserver_servicegroup_binding:"
+    for l in group_lbs:
+       print "            - name: %s" % (l)
+       print "              servicegroupname: %s" % group
+       csvs.extend(lbvservers[l]['csvs'])
+
+  if len(csvs) > 0:
+    print "\n\n"
+    print "csvservers:"
+    print "    csvserver:"
+    for csv in set(csvs):
+      print "        - name: %s" % csv
+      for key in sorted(csvservers[csv]):
+        if key != "binds" and key != "name":
+          print "          %s: %s" % (key, csvservers[csv][key])
+
+
   pols = []
   pol_types = []
-  print "    csvserver_binding:"
-  print "        csvserver_cspolicy_binding:"
-  for csv in set(csvs):
-    if csv in bindings["csvserver_binding"]["csvserver_cspolicy_binding"]:
-      for bind in bindings["csvserver_binding"]["csvserver_cspolicy_binding"][csv]:
-        if "targetlbvserver" in bind.keys() and bind["targetlbvserver"] not in lbs:
-          continue
-        pol_name = bind["policyname"]
-        pols.append(pol_name)
-        pol_types.append(policies[pol_name]["t"])
-        print "            - name: %s" % (bind['name'])
-        for key in bind:
-          if key != "name":
-            if key == "type":
-              print "              %s: %s" % ("bindpoint", bind[key])
-            else:
-              print "              %s: %s" % (key, bind[key])
+  if len(csvs) > 0:  
+    print "    csvserver_binding:"
+    print "        csvserver_cspolicy_binding:"
+    for csv in set(csvs):
+      if csv in bindings["csvserver_binding"]["csvserver_cspolicy_binding"]:
+        for bind in bindings["csvserver_binding"]["csvserver_cspolicy_binding"][csv]:
+          if "targetlbvserver" in bind.keys() and bind["targetlbvserver"] not in group_lbs:
+            continue
+          pol_name = bind["policyname"]
+          pols.append(pol_name)
+          pol_types.append(policies[pol_name]["t"])
+          print "            - name: %s" % (bind['name'])
+          for key in bind:
+            if key != "name":
+              if key == "type":
+                print "              %s: %s" % ("bindpoint", bind[key])
+              else:
+                print "              %s: %s" % (key, bind[key])
 
-  print "        csvserver_lbvserver_binding:"
+  flag = 0
   for csv in set(csvs):
     if csv in bindings["csvserver_binding"]["csvserver_lbvserver_binding"]:
       for bind in bindings["csvserver_binding"]["csvserver_lbvserver_binding"][csv]:
-        print "            - name: %s" % (bind['name'])
-        for key in bind:
-          if key != "name":
-            print "              %s: %s" % (key, bind[key])
+        if bind["lbvserver"] in group_lbs:
+          if flag == 0:
+            print "        csvserver_lbvserver_binding:"
+            flag = 1
+          print "            - name: %s" % (bind['name'])
+          for key in bind:
+            if key != "name":
+              print "              %s: %s" % (key, bind[key])
 
+  exps = []
+  pats = []
+  if len(pol_types) > 0:
+    print "\n\n"
+    print "policies:"
+    pol_exps = set([x for x in policyexpressions.keys()])
+    for t in set(pol_types):
+      print "    %s:" % t
+      for pol in set(pols):
+        p = policies[pol]
+        if p["t"] == t:
+          if t == "cspolicy":
+            print "        - policyname: %s" % pol
+          else:
+            print "        - name: %s" % pol
+          for key in p.keys():
+            if key != "t" and key != "name" and key != "policyname":
+              print '          %s: %s' % (key, p[key])
+              for exp in pol_exps:
+                if exp in p[key]:
+                  exps.append(exp)
+            if key == "rule":
+               for pat in patsets.keys():
+                   if pat in p[key]:
+                      pats.append(pat)
 
-  print "\n\n"
-  print "lbvservers:"
-  print "    lbvserver:"
-  for lb in lbs:
-    print "        - name: %s" % lb
-    for key in sorted(lbvservers[lb]):
-      if key != "name" and key != "csvs":
-        print "          %s: %s" % (key, lbvservers[lb][key])
+  if len(exps) > 0:
+    print "\n\n"
+    print "policyexpressions:"
+    print "    policyexpression:"
+    for exp in exps:
+      e = policyexpressions[exp]
+      print "        - name: %s" % e["name"]
+      for key in e.keys():
+        if key != "name":
+          print '          %s: %s' % (key, e[key])
+        if key == "value":
+          for pat in patsets.keys():
+             if pat in e[key]:
+               pats.append(pat)
 
-
-  print "\n\n"
-  print "csvservers:"
-  print "    csvserver:"
-  for csv in set(csvs):
-    print "        - name: %s" % csv
-    for key in sorted(csvservers[csv]):
-      if key != "binds" and key != "name":
-        print "          %s: %s" % (key, csvservers[csv][key])
-
-
-
-  print "\n\n"
-  print "policies:"
-  for t in set(pol_types):
-    print "    %s:" % t
-    for pol in set(pols):
-      p = policies[pol]
-      if p["t"] == t:
-        print "        - name: %s" % pol
-        for key in p.keys():
-          if key != "t" and key != "name":
-            print "          %s: %s" % (key, p[key])
+  if len(pats) > 0:
+    print "\n\n"
+    print "patsets:"
+    print "    patset:"
+    for pat in set(pats):
+       print "        %s: " % pat
+       for b in patsets[pat]:
+           print "            - name: %s" % pat
+           print "              String: %s" % b
 
 
   print "\n\n"
@@ -427,28 +540,36 @@ def get_group_conf(group):
     print "          ipaddress: %s" % servers[s]["ipaddress"]
 
 
-  print "\n\n"
-  print "lbmonitors:"
-  print "    lbmonitor:"
-  for mon in mons:
-    l = lbmons[mon]
-    print "        - monitorname: %s" % l["name"]
-    for key in l.keys():
-      if key != "name" and key != "monitorname":
+  if len(group_mons) > 0:
+    print "\n\n"
+    print "lbmonitors:"
+    print "    lbmonitor:"
+    for mon in group_mons:
+      if mon == "ping":
+        continue
+      l = lbmons[mon]
+      print "        - monitorname: %s" % l["name"]
+      for key in l.keys():
+        if key != "name" and key != "monitorname":
           print "          %s: %s" % (key, l[key])
 
-  print
-  print "actions:"
   acts = [policies[x]["action"] for x in policies.keys() if "action" in policies[x].keys() and policies[x]["name"] in pols]
-  for act in acts:
-    if act in actions.keys():
-      a = actions[act]
-      print "    %s:" % a["t"]
-      print "          - name: %s" % a["name"]
-      for key in a.keys():
-        if key != "t" and key != "name":
-          print "            %s: %s" % (key, a[key])
-
+  if len(acts) > 0:
+    print
+    print "actions:"
+    act_types = set([actions[x]["t"] for x in acts if x != "DROP"])
+    for tt in act_types:
+      print "    %s:" % tt
+      for act in acts:
+        if act in actions.keys() and actions[act]["t"] == tt:
+          a = actions[act]
+          print "          - name: %s" % a["name"]
+          for key in a.keys():
+            if key != "t" and key != "name":
+              if key == "target":
+                print "            %s: '%s'" % (key, a[key].strip())
+              else:
+                print "            %s: '%s'" % (key, a[key])
   
 def main():
   args = GetArgs()
