@@ -1,25 +1,25 @@
 ---
 
-- name: Create CS vserver (module)
-  tags:
-    - create_cs_vserver_module
-    - module
-  delegate_to: localhost
-  netscaler_cs_vserver:
-    nsip: "{{ ns_ip }}"
-    validate_certs: no
-    nitro_user: "{{ ns_user }}"
-    nitro_pass: "{{ ns_pass }}"
-    state: present
 
-    name: "{{ item.key }}"
-    ipv46: "{{ item.value.ipv46}}"
-    servicetype: "{{ item.value.servicetype }}"
-    redirecturl: "{{ item.value.redirecturl }}"
-    port: "{{ item.value.port }}"
-    listenpolicy: None
-  register: create_cs_vserver
-  with_dict: "{{ csvservers }}"
+- name: Create CS vserver (uri)
+  delegate_to: localhost
+  tags:
+    - create_cs_vserver_uri
+    - uri
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/csvserver"
+    method: POST
+    status_code: 200,201,409,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"csvserver": {{ item }} }'
+  register: create_cs_vserver 
+  with_items: "{{ csvservers.csvserver_backup }}"
+  when: csvservers.csvserver_backup is defined
+
 
 - name: Create CS vserver (uri)
   delegate_to: localhost
@@ -59,7 +59,9 @@
     body: '{"csvserver_cspolicy_binding": {{ item }} }'
   register: bind_cs_policies
   with_items: "{{ csvservers.csvserver_binding.csvserver_cspolicy_binding }}"
-  when: csvservers.csvserver_binding.csvserver_cspolicy_binding is defined
+#  when: csvservers.csvserver_binding.csvserver_cspolicy_binding is defined
+  when: csvservers.csvserver_binding is defined
+
 
 
 - name: Bind lb vservers to cs vserver (uri)
