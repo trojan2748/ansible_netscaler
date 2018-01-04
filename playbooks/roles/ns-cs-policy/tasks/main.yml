@@ -17,12 +17,13 @@
     body: '{"policyexpression": {{ item | to_json }} }'
   register: create_policyexpressions_
   with_items: "{{ policyexpressions.policyexpression }}"
-  when: policyexpressions is defined
+  when: policyexpressions.policyexpression is defined
 
 
 - name: Create responder policies (uri)
   tags:
     - create_policies
+    - create_responder_policies
     - uri
   delegate_to: localhost
   uri:
@@ -42,10 +43,11 @@
 - name: Create rewrite policies (uri)
   tags:
     - create_policies
+    - create_rewrite_policies
     - uri
   delegate_to: localhost
   uri:
-    url: "http://{{ ns_ip }}/nitro/v1/config/rewriterpolicy"
+    url: "http://{{ ns_ip }}/nitro/v1/config/rewritepolicy"
     method: POST
     status_code: 200,201,409,599
     return_content: yes
@@ -62,6 +64,7 @@
 - name: Create cs policies (uri)
   tags:
     - create_policies
+    - create_cs_policies
     - uri
   delegate_to: localhost
   uri:
