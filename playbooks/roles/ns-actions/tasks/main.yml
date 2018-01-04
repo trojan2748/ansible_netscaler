@@ -39,4 +39,3 @@
   with_items: "{{ actions.rewriteaction }}"
   when: actions.rewriteaction is defined
 
-
