@@ -19,6 +19,7 @@
     body: '{"policypatset":{"name":"{{ item }}"} }'
   register: create_policy_patset
   with_items: "{{ patsets.patset }}"
+  when: patsets.patset is defined
 
 
 - name: Bind URLs to policypatset (uri)
@@ -39,6 +40,7 @@
     body_format: json
     body: '{"policypatset_pattern_binding": {{ item | to_json }} }'
   register: bind_patsets
-  with_items: "{{ patsets.patset.policypatset_pattern_binding }}"
+  with_items: "{{ patsets.policypatset_pattern_binding }}"
   ignore_errors: True
+  when: patsets.policypatset_pattern_binding is defined
 

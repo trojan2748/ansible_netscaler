@@ -1,28 +1,5 @@
 ---
 
-
-- name: Create lb-mon (module)
-  tags:
-    - create_lb_mon_module
-    - module
-  delegate_to: localhost
-  netscaler_lb_monitor:
-    nsip: "{{ ns_ip }}"
-    validate_certs: no
-    nitro_user: "{{ ns_user }}"
-    nitro_pass: "{{ ns_pass }}"
-    state: present
-    monitorname: "{{ item.monitorname }}"
-    type: "{{ item.type }}"
-    lrtm: "{{ item.lrtm | lower }}"
-    respcode: "{{ item.respcode }}"
-    httprequest: "{{ item.httprequest }}"
-    resptimeout: "{{ item.resptimeout }}"
-    interval: "{{ item.interval }}"
-  register: create_lb_mon
-  with_items: "{{ lbmonitors.lbmonitor }}"
-
-
 - name: Create lb-mon (uri)
   tags:
     - create_lb_mon_uri
@@ -40,5 +17,5 @@
     body: '{"lbmonitor": {{ item | to_json }} }'
   with_items: "{{ lbmonitors.lbmonitor }}"
   register: create_lb_mon_result
-  when: lbmonitors is defined
+  when: lbmonitors.lbmonitor is defined
 

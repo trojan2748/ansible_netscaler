@@ -1,22 +1,6 @@
 ---
 
 
-- name: Create servers (module)
-  tags:
-    - create_servers_module
-    - module
-  delegate_to: localhost
-  netscaler_server:
-    nsip: "{{ ns_ip }}"
-    validate_certs: no
-    nitro_user: "{{ ns_user }}"
-    nitro_pass: "{{ ns_pass }}"
-    state: present
-    name: "{{ item.name }}"
-    ipaddress: "{{ item.ipaddress }}"
-  with_items: "{{ servers.server }}"
-
-
 - name: Create servers (uri)
   delegate_to: localhost
   tags:
@@ -34,5 +18,4 @@
     body: '{"server": {{ item }} }'
   register: add_servers
   with_items: "{{ servers.server }}"
-#  failed_when: "'Resource already exists' not in add_servers['json']['response'][0]['message'] and 201 != add_servers['status']"
 

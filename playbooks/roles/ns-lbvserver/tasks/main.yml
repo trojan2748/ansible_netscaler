@@ -1,33 +1,5 @@
 ---
 
-#- name: Create LB vserver
-#  tags:
-#    - create_lb_vserver 
-#  delegate_to: localhost
-#  netscaler_lb_vserver:
-#    nsip: "{{ ns_ip }}"
-#    validate_certs: no
-#    nitro_user: "{{ ns_user }}"
-#    nitro_pass: "{{ ns_pass }}"
-#    state: present
-
-#    name: "{{ item.key }}"
-#    servicetype: "{{ item.value.servicetype }}"
-#    lbmethod: "{{ item.value.lbmethod | upper }}"
-#    listenpolicy: "{{ item.value.listenpolicy }}"
-#    ipv46: "{{ item.value.ipv46 }}"
-#    persistencetype: "{{ item.value.persistencetype }}"
-#    port: '{{ item.value.port }}'
-#    clttimeout: "{{ item.value.clttimeout }}"
-
-#    servicegroupbindings:
-#      - servicegroupname: "{{ bindings.lbmons.servicegroupname }}"
-#  register: create_lb_vserver
-#  with_dict: "{{ lbvservers }}"
-
-
-
-
 - name: Create backup lbvserver (uri)
   tags:
     - create_lbvserver_uri
@@ -48,7 +20,6 @@
   when: lbvservers.backuplbvserver is defined
 
 
-
 - name: Create lbvserver (uri)
   tags:
     - create_lbvserver_uri
@@ -67,6 +38,7 @@
   with_items: "{{ lbvservers.lbvserver }}"
   register: create_lbvserver_uri
   ignore_errors: True
+  when: lbvservers.lbvserver is defined
 
 
 - name: Bind lb vserver to serviceGroup (uri)
@@ -89,3 +61,4 @@
   with_items: "{{ lbvservers.lbvserver_binding.lbvserver_servicegroup_binding }}"
   register: bind_lbmon_uri
   ignore_errors: True
+  when: lbvservers.lbvserver_binding.lbvserver_servicegroup_binding is defined
