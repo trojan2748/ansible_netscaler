@@ -1,10 +1,9 @@
 ---
 
-
-- name: Create CS vserver (uri)
+- name: Create Backup CS Vserver
   delegate_to: localhost
   tags:
-    - create_cs_vserver_uri
+    - create_cs_vserver
     - uri
   uri:
     url: "http://{{ ns_ip }}/nitro/v1/config/csvserver"
@@ -21,10 +20,10 @@
   when: csvservers.csvserver_backup is defined
 
 
-- name: Create CS vserver (uri)
+- name: Create CS Vserver
   delegate_to: localhost
   tags:
-    - create_cs_vserver_uri
+    - create_cs_vserver
     - uri
   uri:
     url: "http://{{ ns_ip }}/nitro/v1/config/csvserver"
@@ -40,13 +39,11 @@
   with_items: "{{ csvservers.csvserver }}"
   when: csvservers.csvserver is defined
 
-- name: Bind CS policies to cs vserver (uri)
+- name: Bind CS policies to CS vserver
   delegate_to: localhost
   tags:
-    - bind_cs_policies_uri
-    - bind_policies_module
+    - bind_cs_policies
     - uri
-    - module
   uri:
     url: "http://{{ ns_ip }}/nitro/v1/config/csvserver_cspolicy_binding"
     method: POST
@@ -59,18 +56,15 @@
     body: '{"csvserver_cspolicy_binding": {{ item }} }'
   register: bind_cs_policies
   with_items: "{{ csvservers.csvserver_binding.csvserver_cspolicy_binding }}"
-#  when: csvservers.csvserver_binding.csvserver_cspolicy_binding is defined
   when: csvservers.csvserver_binding is defined
 
 
 
-- name: Bind lb vservers to cs vserver (uri)
+- name: Bind lb vservers to cs vserver
   delegate_to: localhost
   tags:
-    - bind_lb_cs_uri
-    - bind_policies_module
+    - bind_lb_cs
     - uri
-    - module
   uri:
     url: "http://{{ ns_ip }}/nitro/v1/config/csvserver_lbvserver_binding"
     method: POST

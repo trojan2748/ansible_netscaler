@@ -1,8 +1,8 @@
 ---
 
-- name: Create backup lbvserver (uri)
+- name: Create backup lbvserver
   tags:
-    - create_lbvserver_uri
+    - create_lbvserver
     - uri
   delegate_to: localhost
   uri:
@@ -16,13 +16,13 @@
     body_format: json
     body: '{"lbvserver": {{ item | to_json }} }'
   with_items: "{{ lbvservers.backuplbvserver }}"
-  register: create_lbvserver_uri
+  register: create_lbvserver
   when: lbvservers.backuplbvserver is defined
 
 
-- name: Create lbvserver (uri)
+- name: Create lbvserver
   tags:
-    - create_lbvserver_uri
+    - create_lbvserver
     - uri
   delegate_to: localhost
   uri:
@@ -36,17 +36,16 @@
     body_format: json
     body: '{"lbvserver": {{ item | to_json }} }'
   with_items: "{{ lbvservers.lbvserver }}"
-  register: create_lbvserver_uri
+  register: create_lbvserver
   ignore_errors: True
   when: lbvservers.lbvserver is defined
 
 
-- name: Bind lb vserver to serviceGroup (uri)
+- name: Bind lb vserver to serviceGroup
   tags:
-    - create_lbvserver_uri
-    - bind_lbvserver_uri
+    - create_lbvserver
+    - bind_lbvserver
     - uri
-    - module
   delegate_to: localhost
   uri:
     url: "http://{{ ns_ip }}/nitro/v1/config/lbvserver_servicegroup_binding"
@@ -59,6 +58,32 @@
     body_format: json
     body: '{"lbvserver_servicegroup_binding": {{ item | to_json }} }'
   with_items: "{{ lbvservers.lbvserver_binding.lbvserver_servicegroup_binding }}"
-  register: bind_lbmon_uri
+  register: bind_lbmon
   ignore_errors: True
   when: lbvservers.lbvserver_binding.lbvserver_servicegroup_binding is defined
+
+
+
+- name: Bind LB Vserver to Responder Policy
+  tags:
+    - create_lbvserver
+    - bind_lbvserver
+    - test
+    - uri
+  delegate_to: localhost
+  uri:
+    #url: "http://{{ ns_ip }}/nitro/v1/config/lbvserver_responderpolicy_binding"
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value }} }'
+#    body: '{"lbvserver_responderpolicy_binding": {{ item.values | to_json }} }'
+  with_dict: "{{ lbvservers.lbvserver_binding.lbvserver_pols }}"
+  register: bind_lb_policy
+  ignore_errors: True
+  when: lbvservers.lbvserver_binding.lbvserver_pols is defined

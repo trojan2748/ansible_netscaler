@@ -1,0 +1,171 @@
+---
+
+
+- debug: var=item['key']
+  tags:
+    - shotgun3
+  with_dict: "{{ elem }}"
+
+- name: "{{ item.key }}"
+  delegate_to: localhost
+  tags:
+    - shotgun2
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409, 200
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  register: add_servers
+  with_dict: "{{ elem }}"
+  when: elem is defined
+  ignore_errors: True
+
+- name: Shotgun servers
+  delegate_to: localhost
+  tags:
+    - shotgun
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  register: add_servers
+  with_dict: "{{ servers }}"
+  when: servers.server is defined
+
+
+- name: Shotgun lbmons
+  delegate_to: localhost
+  tags:
+    - shotgun
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  register: add_servers
+  with_dict: "{{ lbmonitors }}"
+  when: lbmonitors.lbmonitor is defined
+
+- name: Shotgun servicegroup
+  delegate_to: localhost
+  tags:
+    - shotgun
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/servicegroup"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"servicegroup": {{ item | to_json }} }'
+  register: add_servers
+  with_items: "{{ servicegroups.servicegroup }}"
+
+- name: Shotgun servicegroup
+  delegate_to: localhost
+  tags:
+    - shotgun
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  register: add_servers
+  with_dict: "{{ servicegroups }}"
+
+
+
+- name: Shotgun lbvserver
+  delegate_to: localhost
+  tags:
+    - shotgun
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  register: add_servers
+  with_dict: "{{ lbvservers }}"
+
+
+- name: Shotgun actions
+  delegate_to: localhost
+  tags:
+    - shotgun
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  register: add_servers
+  with_dict: "{{ actions }}"
+
+
+- name: Shotgun cs-policy
+  delegate_to: localhost
+  tags:
+    - shotgun
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  register: add_servers
+  with_dict: "{{ policies }}"
+
+
+- name: Shotgun cs vservers
+  delegate_to: localhost
+  tags:
+    - shotgun
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/{{ item.key }}"
+    method: POST
+    status_code: 201, 599, 409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"{{ item.key }}": {{ item.value | to_json }} }'
+  register: add_servers
+  with_dict: "{{ csvservers }}"
+

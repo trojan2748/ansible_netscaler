@@ -1,0 +1,22 @@
+---
+
+
+- name: Create DB user
+  delegate_to: localhost
+  tags:
+    - uri
+    - create_dbuser
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/dbuser"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"dbuser": {{ item }} }'
+  register: create_dbuser
+  with_items: "{{ users.dbuser }}"
+  when: users.dbuser is defined
+

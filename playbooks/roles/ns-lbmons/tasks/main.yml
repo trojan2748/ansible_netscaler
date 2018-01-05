@@ -1,8 +1,8 @@
 ---
 
-- name: Create lb-mon (uri)
+- name: Create lb-mon
   tags:
-    - create_lb_mon_uri
+    - create_lb_mon
     - uri
   delegate_to: localhost
   uri:
