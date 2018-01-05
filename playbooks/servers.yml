@@ -1,0 +1,9 @@
+---
+
+- hosts: all
+  gather_facts: False
+  vars_files:
+    - vars/all.yml
+    - vars/sample.yml
+  roles:
+    - ns-servers

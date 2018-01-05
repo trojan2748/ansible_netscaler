@@ -1,0 +1,154 @@
+from ansible.constants import mk_boolean
+from ansible.module_utils.urls import open_url
+from ansible.errors import AnsibleError
+from ansible.plugins.callback import CallbackBase
+
+from datetime import datetime
+
+try:
+    import prettytable
+    HAS_PRETTYTABLE = True
+except ImportError:
+    HAS_PRETTYTABLE = False
+
+class CallbackModule(CallbackBase):
+    """
+    This callback module tells you how long your plays ran for.
+    """
+    CALLBACK_VERSION = 2.0
+    CALLBACK_TYPE = 'actionable'
+    CALLBACK_NAME = 'checkout'
+    CALLBACK_NEEDS_WHITELIST = False
+
+    def __init__(self):
+        self.super_ref = super(CallbackModule, self)
+        self.super_ref.__init__()
+        self.whitelist_errors = ["The monitor is already bound to the service",
+                                 "Resource already exists",
+                                 "Action name is already in use",
+                                 "Policy name already in use",
+                                 "Done"]
+        self.obj_names = ["monitor_name", "servicegroupname", "name", "servername", "policyname", "lbvserver"]
+        self.whitelist_status = [201, 409]
+        self.created = {}
+        self.already_configured = {}
+        self.errors = {}
+        self.invs = {}
+        self.skipped = []
+        self.StartTime = datetime.now()
+        #self.whitelist_status = [201, 409, 599]
+
+
+    def parse_result(self, results, task_name):
+        for result in results["results"]:
+            try:
+                inv = result['invocation']['module_args']['body'].keys()[0]
+                inv_keys = result['invocation']['module_args']['body'][inv].keys()
+                body = result['invocation']['module_args']['body'][inv]
+                if inv not in self.invs.keys():
+                    self.invs[inv] = {}
+                names = set(self.obj_names) & set(inv_keys)
+                item = [body[x] for x in names]
+            except:
+                pass
+
+            status = result['status']
+            content = result["content"]
+            if status == 201:
+                if inv not in self.created.keys():
+                    self.created[inv] = {}
+                    stat = self.created[inv]
+                    stat['count'] = 0
+                    stat['names'] = []
+                else:
+                    stat = self.created[inv]
+                stat['count'] += 1
+                stat['names'].append(item)
+
+            elif status == 409:
+                if inv not in self.already_configured.keys():
+                    self.already_configured[inv] = {}
+                    stat = self.already_configured[inv]
+                    stat['count'] = 0
+                    stat['names'] = []
+                else:
+                    stat = self.already_configured[inv]
+                stat['count'] += 1
+                stat['names'].append(item)
+
+            elif status == 404 or status == 599 or status == 406:
+                j_res = result['json']
+                if j_res["message"] == "No such policy exists" or "Expression syntax error" in j_res["message"]:
+                   pol_name = result['item']['policyname']
+                   if pol_name not in self.errors.keys():
+                       self.errors[pol_name] ={}
+                   stat = self.errors[pol_name]
+                   stat["message"] = j_res["message"]
+                else:
+                    if "name" in result['item'].keys():
+                        name = result['item']['name']
+                        if name not in self.errors.keys():
+                            self.errors[name] ={}
+                        self.errors[name]["message"] = j_res["message"]
+            elif status == 400:
+                name = result['item']
+                j_res = result['json']
+                if name not in self.errors.keys():
+                    self.errors[name] = {}
+                self.errors[name]["message"] = j_res["message"]
+                
+
+
+
+#            else:
+#                pass
+#                print "STATUS: ", status
+#                print content
+
+
+    def v2_runner_on_skipped(self, result):
+        self.skipped.append(result._task.name)
+    def v2_runner_item_on_skipped(self, result):
+        self.skipped.append(result._task.name)
+
+    def v2_runner_on_ok(self, result):
+        self.parse_result(result._result, result._task.name)
+    def runner_on_ok(self, result):
+        self.parse_result(result._result, result._task.name)
+    def v2_runner_item_on_ok(self, result):
+        self.parse_result(result._result, result._task.name)
+    def runner_item_on_ok(self, result):
+        self.parse_result(result._result, result._task.name)
+
+
+
+    def v2_runner_on_failed(self, result, ignore_errors=True):
+        if "results" in result._result.keys():
+            self.parse_result(result._result, result._task.name)
+        else:
+            if "YAML" not in self.errors.keys():
+                self.errors["YAML"] = {}
+            self.errors["YAML"]["message"] = []
+            self.errors["YAML"]["message"].append(result._result["msg"])
+
+    def playbook_on_stats(self, stats):
+        EndTime = datetime.now()
+        c1 = 0
+        c2 = 0
+        c3 = 0
+        c4 = len(self.skipped)
+        for k,v in self.created.iteritems():
+            for n in v['names']:
+              c1 += 1
+        for k,v in self.already_configured.iteritems():
+            for n in sorted(v['names']):
+              c2 += 1
+        print "Errors:"
+        for k,v in self.errors.iteritems():
+            print "    ERROR: %s: %s" % (k, v["message"])
+            c3 += 1
+        print "Skipped:"
+        for item in self.skipped:
+            print "    %s" % item
+
+        print "New: %s   Unchanged: %s   Errors: %s   Skipped: %s   Time: %s" %(c1, c2, c3, c4, (EndTime - self.StartTime))
