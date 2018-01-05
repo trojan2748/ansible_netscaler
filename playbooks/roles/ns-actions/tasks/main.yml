@@ -1,8 +1,73 @@
 ---
 
-- name: Create responder action (uri)
+- name: Create transform profile
   tags:
-    - create_responder_action_uri
+    - create_transform_profile
+    - create_actions
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/transformprofile"
+    method: POST
+    status_code: 200,201,409,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: "{ 'transformprofile' :  {{ item }} }"
+  register: create_profile
+  with_items: "{{ profiles.transformprofile }}"
+  when: profiles.transformprofile is defined
+
+
+- name: Create transform action
+  tags:
+    - create_transform_action
+    - create_actions
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/transformaction"
+    method: POST
+    status_code: 200,201,409,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: "{ 'transformaction' :  {{ item }} }"
+  register: create_transformaction
+  with_items: "{{ actions.transformaction }}"
+  when: actions.transformaction is defined
+
+
+- name: Update transform action
+  tags:
+    - create_transform_action
+    - update_transform_action
+    - create_actions
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/transformaction"
+    method: PUT
+    status_code: 200,201,409,599
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: "{ 'transformaction' :  {{ item }} }"
+  register: create_transformactionset
+  with_items: "{{ actions.transformactionset }}"
+  when: actions.transformaction is defined
+
+
+- name: Create responder action
+  tags:
+    - create_responder_actions
+    - create_actions
     - uri
   delegate_to: localhost
   uri:
@@ -20,9 +85,10 @@
   when: actions.responderaction is defined
 
 
-- name: Create rewrite action (uri)
+- name: Create rewrite action
   tags:
-    - create_rewrite_action_uri
+    - create_rewrite_actions
+    - create_actions
     - uri
   delegate_to: localhost
   uri:
@@ -38,4 +104,6 @@
   register: create_rewrite_action_result
   with_items: "{{ actions.rewriteaction }}"
   when: actions.rewriteaction is defined
+
+
 
