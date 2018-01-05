@@ -1,0 +1,40 @@
+---
+
+- name: Create Services
+  tags:
+    - create_services
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/service"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"service": {{ item | to_json }} }'
+  with_items: "{{ services.service }}"
+  register: create_services
+  ignore_errors: True
+
+
+- name: Bind Services to LB Monitors
+  tags:
+    - bind_services
+    - uri
+  delegate_to: localhost
+  uri:
+    url: "http://{{ ns_ip }}/nitro/v1/config/service_lbmonitor_binding"
+    method: POST
+    status_code: 200,201,409
+    return_content: yes
+    headers:
+      X-NITRO-USER: "{{ ns_user }}"
+      X-NITRO-PASS: "{{ ns_pass }}"
+    body_format: json
+    body: '{"service_lbmonitor_binding": {{ item | to_json }} }'
+  with_items: "{{ services.service_lbmonitor_binding }}"
+  register: bind_services
+  ignore_errors: True

@@ -1,0 +1,8 @@
+---
+
+servers:
+    server:
+        - name: SERVER-SAMPLE-4
+          ipaddress: 10.1.1.4
+        - name: SERVER-SAMPLE-5
+          ipaddress: 10.1.1.5
