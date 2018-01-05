@@ -1,8 +1,8 @@
 ---
 
-- name: Create serviceGroup (uri)
+- name: Create serviceGroup
   tags:
-    - create_serviceGroup_uri
+    - create_serviceGroup
     - uri
   delegate_to: localhost
   uri:
@@ -19,13 +19,10 @@
   register: create_serviceGroup_uri
   ignore_errors: True
 
-- name: Bind servers to serviceGroup (uri)
+- name: Bind servers to serviceGroup
   tags:
-    - create_serviceGroup_uri
-    - create_serviceGroup_module
-    - bind_serviceGroup_uri
+    - bind_servers_serviceGroup
     - uri
-    - module
   delegate_to: localhost
   uri:
     url: "http://{{ ns_ip }}/nitro/v1/config/servicegroup_servicegroupmember_binding"
@@ -43,13 +40,11 @@
   when: servicegroups.servicegroup_servicegroupmember_binding is defined
 
 
-- name: Bind lb monitor to serviceGroup (uri)
+- name: Bind lb monitor to serviceGroup
   tags:
     - create_serviceGroup_uri
-    - create_serviceGroup_module
     - bind_serviceGroup_uri
     - uri
-    - module
   delegate_to: localhost
   uri:
     url: "http://{{ ns_ip }}/nitro/v1/config/servicegroup_lbmonitor_binding"
